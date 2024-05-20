@@ -25,7 +25,7 @@ class HiloCliente extends Thread {
     public void run() {
         try {
             DatagramSocket socket = new DatagramSocket(puerto);
-            //mesnaje para ver la conexion
+            //mensaje para ver la conexión
             System.out.println("Esperando la conexión del cliente...");
 
             while (true) {
@@ -33,10 +33,10 @@ class HiloCliente extends Thread {
                 DatagramPacket paqueteEntrada = new DatagramPacket(bufferEntrada, bufferEntrada.length);
                 socket.receive(paqueteEntrada);
 
-                //obtener la direccion del cliente
+                //obtener la dirección del cliente
                 InetAddress direccionCliente = paqueteEntrada.getAddress();
                 int puertoCliente = paqueteEntrada.getPort();
-                
+
                 System.out.println("Conexión establecida con el cliente en la dirección IP: " + direccionCliente.getHostAddress());
 
                 int puntajeTotal = 0;
@@ -78,8 +78,6 @@ class HiloCliente extends Thread {
                 socket.send(paquetePuntaje);
 
                 System.out.println("Puntaje final enviado al cliente: " + puntajeTotal);
-
-                socket.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
