@@ -6,41 +6,63 @@ import java.util.Scanner;
 
 public class cliente {
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        DatagramSocket socket_cliente;
+        int puerto = 5000;
 
         try {
-            socket_cliente = new DatagramSocket();
-            InetAddress address = InetAddress.getByName("localhost");
+            DatagramSocket socket = new DatagramSocket();
+            InetAddress direccionIP_servidor = InetAddress.getByName("localhost");
 
-            byte[] buf = new byte[1024]; // Aumentar el tamaño del búfer
-            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, 5000);
-            socket_cliente.send(packet); // Enviar mensaje inicial
+            Scanner scanner = new Scanner(System.in);
 
             while (true) {
-                // Limpiar el búfer antes de recibir
-                buf = new byte[1024];
-                packet = new DatagramPacket(buf, buf.length);
-                socket_cliente.receive(packet);
-                String pregunta = new String(packet.getData(), 0, packet.getLength()).trim();
-                if (pregunta.isEmpty()) break;
+                byte[] bufferEntrada = new byte[1024];
+                DatagramPacket paqueteEntrada = new DatagramPacket(bufferEntrada, bufferEntrada.length);
 
-                System.out.println("Pregunta: " + pregunta);
-                String respuesta = scanner.nextLine();
+                // Enviar mensaje inicial para empezar la comunicación
+                String mensajeInicio = "Inicio";
+                byte[] bufferSalida = mensajeInicio.getBytes();
+                DatagramPacket paqueteSalida = new DatagramPacket(bufferSalida, bufferSalida.length, direccionIP_servidor, puerto);
+                socket.send(paqueteSalida);
 
-                buf = respuesta.getBytes();
-                packet = new DatagramPacket(buf, buf.length, address, 5000);
-                socket_cliente.send(packet);
+                for (int i = 0; i < 5; i++) {
+                    // Recibir la pregunta del servidor
+                    bufferEntrada = new byte[1024];
+                    paqueteEntrada = new DatagramPacket(bufferEntrada, bufferEntrada.length);
+                    socket.receive(paqueteEntrada);
+                    String pregunta = new String(paqueteEntrada.getData(), 0, paqueteEntrada.getLength()).trim();
+                    System.out.println("Pregunta: " + pregunta);
 
-                // Limpiar el búfer antes de recibir
-                buf = new byte[1024];
-                packet = new DatagramPacket(buf, buf.length);
-                socket_cliente.receive(packet);
-                String resultado = new String(packet.getData(), 0, packet.getLength()).trim();
-                System.out.println(resultado);
+                    // Leer la respuesta desde el teclado
+                    String respuesta = scanner.nextLine();
+
+                    // Enviar la respuesta al servidor
+                    bufferSalida = respuesta.getBytes();
+                    paqueteSalida = new DatagramPacket(bufferSalida, bufferSalida.length, direccionIP_servidor, puerto);
+                    socket.send(paqueteSalida);
+
+                    // Recibir el resultado de la respuesta
+                    bufferEntrada = new byte[1024];
+                    paqueteEntrada = new DatagramPacket(bufferEntrada, bufferEntrada.length);
+                    socket.receive(paqueteEntrada);
+                    String resultado = new String(paqueteEntrada.getData(), 0, paqueteEntrada.getLength()).trim();
+                    System.out.println(resultado);
+                }
+
+                // Recibir el puntaje final del servidor
+                bufferEntrada = new byte[1024];
+                paqueteEntrada = new DatagramPacket(bufferEntrada, bufferEntrada.length);
+                socket.receive(paqueteEntrada);
+                String puntajeFinal = new String(paqueteEntrada.getData(), 0, paqueteEntrada.getLength()).trim();
+                System.out.println("Puntaje final: " + puntajeFinal);
+
+                break; // Terminar después de recibir el puntaje final
             }
+
+            // Cerrar el socket al finalizar la comunicación
+            socket.close();
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 }
