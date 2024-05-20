@@ -1,37 +1,38 @@
+// Step 2, 3, 4: Modify hiloCliente class
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.List;
+import java.util.Scanner;
 
-public class Hilocliente extends Thread{
+public class hiloCliente extends Thread {
+    Scanner scanner = new Scanner(System.in);
+    Socket socket_cliente;
+    List<Question> questions;
 
-    private DatagramSocket socket;
-    private DatagramPacket paqueteEntrada;
-
-    public Hilocliente(DatagramSocket socket, DatagramPacket paqueteEntrada){
-        this.socket=socket;
-        this.paqueteEntrada=paqueteEntrada;
-
+    public hiloCliente(Socket socket_cliente, List<Question> questions) {
+        this.socket_cliente = socket_cliente;
+        this.questions = questions;
     }
 
-    public void run (){
-         //Extraer la informacion del paquete
-         String mensajeRecibido = new String (paqueteEntrada.getData());
-         System.out.println("El mensaje es: "+ mensajeRecibido);
+    public void run() {
+        try {
+            BufferedReader entrada = new BufferedReader(new InputStreamReader(socket_cliente.getInputStream()));
+            PrintWriter salida = new PrintWriter(socket_cliente.getOutputStream(), true);
 
-         //Obtener direccion cliente
-         InetAddress direccionIp_Cliente = paqueteEntrada.getAddress();
-         int puerto_cliente=paqueteEntrada.getPort();
+            for (Question question : questions) {
+                salida.println(question.getQuestion());
+                String respuesta = entrada.readLine();
 
-          //crear un arrglo de bytes para recibir los datos del cliente
-          String mensajeSalida = "Hola soy el servidor";
-          byte[]bufferSalida = mensajeSalida.getBytes();
-          //crear objeto datagrama para enviar los datos del cliente
-          DatagramPacket paqueteSalida = new DatagramPacket (bufferSalida,bufferSalida.length,direccionIp_Cliente,puerto_cliente);
-          try {
-            socket.send(paqueteSalida);
+                if (respuesta.equals(question.getCorrectAnswer())) {
+                    salida.println("Correcto");
+                } else {
+                    salida.println("Incorrecto. La respuesta correcta es: " + question.getCorrectAnswer());
+                }
+            }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
